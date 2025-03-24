@@ -2,7 +2,7 @@ CC = cc
 
 CFLAGS = -Wall -Wextra -Werror -g
 
-SRCS =  srcs/main.c srcs/split.c srcs/checks.c srcs/initilize.c srcs/parse.c srcs/ft_free.c
+SRCS =  srcs/main.c srcs/split.c srcs/checks.c srcs/initilize.c srcs/parse.c srcs/ft_free.c srcs/expand.c srcs/handle_error.c
 
 OBJ = $(SRCS:.c=.o)
 
@@ -11,7 +11,7 @@ LIBFT_DIR = libft
 
 LIBFT_A = libft/libft.a
 
-NAME = Minishell
+NAME = minishell
 
 
 

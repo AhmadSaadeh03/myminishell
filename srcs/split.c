@@ -5,31 +5,51 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: asaadeh <asaadeh@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/24 13:42:38 by asaadeh           #+#    #+#             */
-/*   Updated: 2025/03/10 15:45:34 by asaadeh          ###   ########.fr       */
+/*   Created: 2025/03/17 12:32:34 by fghanem           #+#    #+#             */
+/*   Updated: 2025/03/24 15:56:01 by asaadeh          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/minishill.h"
 
+t_node *get_last_node(t_node *head)
+{
+    t_node *current = head;
+    
+    // Traverse the list until the last node
+    while (current && current->next)
+    {
+        current = current->next;
+    }
+    
+    // Return the last node (current will point to the last node)
+    return current;
+}
+
 int split_space(t_minishell *shell)
 {
     int i = 0;
     int  j = 0;
-    int inside_quotes = 0;
+    int inside_quotes_double = 0;
+    int inside_quotes_single = 0;
     char *temp = (char *)malloc(sizeof(char) * (ft_strlen(shell->name) + 1));
     
     if (!temp)
         return 1;
     while (shell->name[i])
     {
-        if (shell->name[i] == '"')
-            inside_quotes = !inside_quotes;  // Toggle quote state
-
-        if (shell->name[i] == ' ' && inside_quotes)
-            temp[j++] = '\a';  // Replace space with a non-printable character
-        else
-            temp[j++] = shell->name[i];   
+        if (shell->name[i] == '"' && !inside_quotes_double && !inside_quotes_single) 
+            inside_quotes_double = !inside_quotes_double;  // Toggle double quote state
+        else if (shell->name[i] == '"' && inside_quotes_double) 
+            inside_quotes_double = !inside_quotes_double;
+        if (shell->name[i] == 39 && !inside_quotes_single && !inside_quotes_double) 
+            inside_quotes_single = !inside_quotes_single;  // Toggle single quote state
+        else if (shell->name[i] == 39 && inside_quotes_single) 
+            inside_quotes_single = !inside_quotes_single;
+        if (shell->name[i] == ' ' && (inside_quotes_single || inside_quotes_double))
+            temp[j++] = '\a';  // Replace space with a non-printable character inside quotes
+        else 
+            temp[j++] = shell->name[i];
         i++;
     }
     temp[j] = '\0';
@@ -55,26 +75,26 @@ int split_space(t_minishell *shell)
     free(temp);
     return 0;   
 }
+
 int split_operation(t_minishell *shell, char operator)
 {
     char *temp;
     int i = 0, len, new_len;
-    int inside_quotes = 0;  // Flag to track if we are inside quotes
+    // int inside_quotes = 0;  // Flag to track if we are inside quotes
     temp = ft_strdup(shell->name);
     if (!temp)
         return 1;
     len = ft_strlen(temp);
-
     while (i < len)
     {
-        if (temp[i] == operator && operator != '"' && operator != 39)
+        if (temp[i] == operator)
         {
-            if ((i == 0 || i == len - 1) && (operator == '|')) 
-            {
-                printf("syntax error near unexpected token\n");
-                free(temp);
-                return 1;
-            }
+            // if ((i == 0 || i == len - 1) && (operator == '|')) 
+            // {
+            //     printf("syntax error near unexpected token\n");
+            //     //free(temp);
+            //     return 1;
+            // }
             if (i > 0 && temp[i - 1] != ' ') 
             {
                 new_len = len + 1; // Space before the operator
@@ -110,49 +130,13 @@ int split_operation(t_minishell *shell, char operator)
                 len = new_len;
             }
         }
-        
-        // Handle quotes and treat everything inside as one token
-    if (temp[i] == '"' && operator == '"' )
-    {
-        if (!inside_quotes)
-        {
-            // If we encounter the first quote, check if a space is needed after
-        // if (temp[i - 1] != ' ') 
-        // {
-        //     printf("Error: No space before the first quote\n");
-        //     free(temp);
-        //     return 1;
-        // }
-        inside_quotes = 1;  // Flag set to true as we are inside quotes
-        }
-    else
-    {
-        // If we encounter the closing quote, check if space is needed after
-        if (i + 1 < len && temp[i + 1] != ' ') 
-        {
-            new_len = len + 1;
-            char *new_temp = malloc(new_len + 1);
-            if (!new_temp)
-            {
-                free(temp);
-                return 1;
-            }
-            ft_memcpy(new_temp, temp, i + 1);
-            new_temp[i + 1] = ' ';  // Add a space after the closing quote
-            ft_memcpy(new_temp + i + 2, temp + i + 1, len - i);
-            free(temp);
-            temp = new_temp;
-            len = new_len;
-        }
-    inside_quotes = 0;  // Reset flag as we are outside quotes now
+        i++;
     }
-}
-    i++;  // Move to the next character
-}
     free(shell->name);
     shell->name = temp;
     return 0;
 }
+
 int split(t_minishell *shell)
 {
     int i = 0;
@@ -160,15 +144,21 @@ int split(t_minishell *shell)
     {
         return 0;
     }
-    if (closed_quotes(shell,'"') == 1)
-    {
-        printf("Error: Unclosed quotes\n");
-        return 1;
-    }
     while (shell->name[i])
     {
-        if (shell->name[i] == '|' || shell->name[i] == '<' || shell->name[i] == '>' || shell->name[i] == '"' || shell->name[i] == 39)
+        if (shell->name[i] == 39 || shell->name[i] == '"')
         {
+            if (closed_quotes(shell, shell->name[i]) == 1)
+            {
+                printf("Error: Unclosed quotes\n");
+                return(1);
+            }
+        i = (handle_quote(shell,shell->name[i]) + i + 1);
+        }
+        if (shell->name[i] == '|' || shell->name[i] == '<' || shell->name[i] == '>')
+        {
+            if (handle_pipe(shell) == 1)
+                return 1;
             if (split_operation(shell, shell->name[i]) == 1)
                 return 1;
         }
@@ -182,27 +172,47 @@ int split(t_minishell *shell)
 
 void process_node_list(t_minishell *shell)
 {
-    t_node *head = create_node_list(shell->token_space);
-    if (head)
+    // t_node *head = create_node_list(shell->token_space);
+    shell->token_list = create_node_list(shell->token_space);
+    // if (head)
+    // {
+    //     t_node *current = head;
+    //     while (current != NULL)
+    //     {
+    //         printf("%s", current->node);
+    //         if (current->next != NULL)
+    //             printf(" -> ");
+    //         current = current->next;
+    //     }
+    //     printf(" -> NULL\n");
+    //     current = head;
+    //     while (current != NULL)
+    //     {
+    //         t_node *temp = current;
+    //         current = current->next;
+    //         free(temp->node);
+    //         free(temp);
+    //     }
+    // }
+    if (shell->token_list && shell->token_list->next == NULL && shell->token_list->node && 
+    (shell->token_list->node[0] == '|' || shell->token_list->node[0] == '<' || shell->token_list->node[0] == '>'))
     {
-        t_node *current = head;
-        while (current != NULL)
-        {
-            printf("%s", current->node);
-            if (current->next != NULL)
-                printf(" -> ");
-            current = current->next;
-        }
-        printf(" -> NULL\n");
-        current = head;
-        while (current != NULL)
-        {
-            t_node *temp = current;
-            current = current->next;
-            free(temp->node);
-            free(temp);
-        }
+        printf("minishell: syntax error near unexpected token `|'\n");
+       //free_node_list(shell->token_list);  // Free the token list before exiting
+        return;
     }
+    t_node *temp = shell->token_list;
+    while (temp->next)
+    {
+        temp = temp->next;
+    }
+    if ((ft_strcmp(temp->node,">") == 0 || ft_strcmp(temp->node,"<") == 0|| ft_strcmp(temp->node,"|") == 0 )
+    && temp->next == NULL)
+    {
+        printf("syntax error near unexpected token\n");
+        return;
+    }
+
     int i = 0;
     while (shell->token_space[i])
     {
@@ -210,4 +220,6 @@ void process_node_list(t_minishell *shell)
         i++;
     }
     free(shell->token_space);
+    if(parsing(&shell) == 1)
+        return ;
 }

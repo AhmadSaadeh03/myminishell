@@ -6,7 +6,7 @@
 /*   By: asaadeh <asaadeh@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/22 18:10:19 by asaadeh           #+#    #+#             */
-/*   Updated: 2025/03/10 13:38:54 by asaadeh          ###   ########.fr       */
+/*   Updated: 2025/03/24 14:41:29 by asaadeh          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#define ARGS_MAX 100
+
 typedef enum s_type
 {
     TOKEN_PIPE, // | 0
-	TOKEN_WORD, // CMD, ARG 1
+	TOKEN_ARG, // CMD, ARG 1
 	TOKEN_REDIRECT_IN, // < 2
 	TOKEN_REDIRECT_OUT, // > 3
 	TOKEN_APPEND, // >> 4
@@ -28,16 +30,7 @@ typedef enum s_type
     FILEIN, // 6
     COMMAND, // 7
     FILEOUT, // 8
-    
 }   t_type;
-
-typedef struct s_cmd
-{
-    char    **args;
-    char    *file_in;
-    char    *file_out;
-    struct s_cmd    *next;
-}   t_cmd;
 
 typedef struct s_node
 {
@@ -51,31 +44,32 @@ typedef struct s_minishell
     char *name;
     char **token_space;
     t_node *token_list;
-    t_cmd       **cmd_list;
 }   t_minishell;
 
 int split_operation(t_minishell *shell, char operator);
 t_node *create_node_list(char **tokens);
 int split(t_minishell *shell);
 int closed_quotes(t_minishell *shell, char qoute);
-//void split_quotes(t_minishell *shell, char operator);
 int split_space(t_minishell *shell);
-// int init_operation(t_minishell *shell);
-int qoutes_handling(t_minishell *shell,char qoute);
-// int init_operation(t_minishell *shell);
-void    parsing(t_minishell **shell);
-void    init_cmd(t_cmd **cmd);
-// void    print(t_minishell **shell);
-void    print(t_minishell **shell);
+int    parsing(t_minishell **shell);
 void    print(t_minishell **shell);
 void free_minishell(t_minishell *shell);
 void free_token_space(char **token_space);
-void free_cmd(t_cmd **cmd);
 t_minishell *init_shell(t_minishell *shell);
 t_node  *fix_redirection(t_node *list);
-void    put_type(t_minishell **shell);
+int    put_type(t_minishell **shell);
 t_node  *fix_redirection(t_node *list);
 void    prt_list(t_minishell **shell);
 void free_and_exit(t_minishell *shell);
 void free_node(t_node *to_free);
 void process_node_list(t_minishell *shell);
+
+void    define_cmd(t_minishell **shell);
+
+void    free_tokens(t_node *list);
+
+int	handle_quote(t_minishell *shell, char operator);
+
+void    expand(t_minishell *shell);
+
+int handle_pipe(t_minishell *shell);
