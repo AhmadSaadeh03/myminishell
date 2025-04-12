@@ -6,22 +6,27 @@
 /*   By: asaadeh <asaadeh@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/24 15:32:56 by asaadeh           #+#    #+#             */
-/*   Updated: 2025/03/24 14:53:00 by asaadeh          ###   ########.fr       */
+/*   Updated: 2025/04/12 19:02:47 by asaadeh          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/minishill.h"
 
-int main(void)
+int main(int arc, char **arv, char **envp)
 {
     t_minishell *shell = NULL;
+    t_env   *env_list;
 
+    (void)arv;
+    (void)arc;
     shell = init_shell(shell);
     if (!shell)
     {
         printf("ERROR:%s \n", "fail allocation of shell");
         exit(1);
     }
+    env_list = NULL;
+    env_list = copy_env_to_list(envp);
     while (1)
     {
         shell->name = readline("👾 Minihell> ");
@@ -32,9 +37,8 @@ int main(void)
         }
         add_history(shell->name);
         if (split(shell) == 1)
-            return 1;
-            //free_minishell(shell);
-        expand(shell);
+            free_and_exit(shell);
+        expand(shell, &env_list);
         free(shell->name);
     }
     free_and_exit(shell);
