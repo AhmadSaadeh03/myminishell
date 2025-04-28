@@ -3,86 +3,131 @@
 /*                                                        :::      ::::::::   */
 /*   initilize.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fghanem <fghanem@student.42.fr>            +#+  +:+       +#+        */
+/*   By: asaadeh <asaadeh@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/01 16:28:26 by asaadeh           #+#    #+#             */
-/*   Updated: 2025/04/09 13:29:33 by fghanem          ###   ########.fr       */
+/*   Updated: 2025/04/28 20:19:48 by asaadeh          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/minishill.h"
+#include "../includes/minishell.h"
 
-t_minishell *init_shell(t_minishell *shell)
+t_minishell	*init_shell(char **envp)
 {
-    shell = malloc(sizeof(t_minishell));
-    if (!shell)
-    {
-        perror("Memory allocation failed for shell.\n");
-        return (NULL);
-    }
-    shell->token_list = NULL;
-    shell->token_space = NULL;
-    shell->name = NULL;
-    return (shell);
+	t_minishell	*shell;
+
+	shell = NULL;
+	shell = malloc(sizeof(t_minishell));
+	if (!shell)
+	{
+		perror("Memory allocation failed for shell.\n");
+		return (NULL);
+	}
+	shell->token_list = NULL;
+	shell->token_space = NULL;
+	shell->name = NULL;
+	shell->cmd_list = NULL;
+	shell->env_list = NULL;
+	shell->envps = NULL;
+	shell->last_arg = NULL;
+	shell->print_last_arg = NULL;
+	shell->env_list = malloc(sizeof(t_env));
+	if (!shell->env_list)
+	{
+		free(shell);
+		return (NULL);
+	}
+	(*shell->env_list) = copy_env_to_list(envp);
+	shell->last_exit = 0;
+	return (shell);
 }
 
-t_node *create_node_list(char **tokens)
+t_cmd	*init_cmd()
 {
-    int i = 0;
-    t_node *head;
-    t_node *current;
-
-    current = NULL;
-    head = NULL;
-    while (tokens[i])
-    {
-        if (tokens[i] == NULL)
-        {
-            printf("Error: NULL token encountered at index %d\n", i);
-            return NULL;
-        }
-        t_node *new_node;
-
-        new_node = create_new_node(tokens[i]);
-        if (!new_node)
-            return NULL;
-        append_node(&head, &current, new_node);
-        i++;
-    }
-    return (head);
+	t_cmd	*cmd;
+	
+	cmd = NULL;
+	cmd = malloc(sizeof(t_cmd));
+	if (!cmd)
+	{
+		perror("Memory allocation failed");
+		return (NULL);
+		// exit(EXIT_FAILURE);
+	}
+	cmd->cmd_line = malloc(50 * sizeof(char *));
+	if (!cmd->cmd_line)
+	{
+		free(cmd);
+		perror("Memory allocation failed");
+		return (NULL);
+		// exit(EXIT_FAILURE);
+	}
+	cmd->file_in = NULL;
+	cmd->file_out = NULL;
+	cmd->redirect = NULL;
+	cmd->append = 0;
+	cmd->limiter = NULL;
+	cmd->next = NULL;
+	return (cmd);
 }
 
-void append_node(t_node **head, t_node **current, t_node *new_node)
+t_node	*create_node_list(char **tokens)
 {
-    if (!*head)
-    {
-        *head = new_node;
-        *current = new_node;
-    }
-    else
-    {
-        (*current)->next = new_node;
-        *current = new_node;
-    }
+	int		i;
+	t_node	*head;
+	t_node	*current;
+		t_node *new_node;
+
+	i = 0;
+	current = NULL;
+	head = NULL;
+	while (tokens[i])
+	{
+		if (tokens[i] == NULL)
+		{
+			printf("Error: NULL token encountered at index %d\n", i);
+			return (NULL);
+		}
+		new_node = create_new_node(tokens[i]);
+		if (!new_node)
+			return (NULL);
+		append_node(&head, &current, new_node);
+		i++;
+	}
+	return (head);
 }
 
-t_node *create_new_node(char *token)
+void	append_node(t_node **head, t_node **current, t_node *new_node)
 {
-    t_node *new_node;
+	if (!*head)
+	{
+		*head = new_node;
+		*current = new_node;
+	}
+	else
+	{
+		(*current)->next = new_node;
+		*current = new_node;
+	}
+}
 
-    new_node = malloc(sizeof(t_node));
-    if (!new_node)
-    {
-        printf("Memory allocation failed\n");
-        return NULL;
-    }
-    new_node->node = ft_strdup(token);
-    if (!new_node->node)
-    {
-        free(new_node);
-        printf("Memory allocation for node failed\n");
-        return NULL;
-    }
-    new_node->next = NULL;
-    return new_node;
+t_node	*create_new_node(char *token)
+{
+	t_node	*new_node;
+
+	new_node = malloc(sizeof(t_node));
+	if (!new_node)
+	{
+		printf("Memory allocation failed\n");
+		return (NULL);
+	}
+	new_node->node = ft_strdup(token);
+	if (!new_node->node)
+	{
+		free(new_node);
+		printf("Memory allocation for node failed\n");
+		return (NULL);
+	}
+	new_node->next = NULL;
+	return (new_node);
 }
